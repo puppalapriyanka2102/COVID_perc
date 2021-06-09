@@ -1,0 +1,80 @@
+---
+title: "COVID"
+author: "Priyanka Puppala"
+date: "6/8/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+
+
+#COVID
+library(tidyverse)
+library(rvest)
+library(dplyr)
+library(readxl)
+library(ggplot2)
+        #Data preparation
+corona  <- read_excel("covid.xlsx")
+corona
+
+
+#Exploratory data analysis
+sum(is.na(corona))
+na.omit(corona)
+str(corona)
+summary(corona)
+head(corona)
+corona <- corona %>% mutate( Deaths_perc =(corona$Deaths/corona$Cases) *100)
+str(corona$Deaths_perc)
+corona <- corona[,-4]
+
+ggplot(corona)+
+  geom_point(aes(x= Deaths_perc, 
+                 y= Deaths)) 
+ggplot(corona)+
+  geom_density(aes(x= Deaths_perc))
+
+#Model building
+model_lm <- lm(Deaths_perc~   Cases+Deaths,corona )
+model_lm
+summary(model_lm)
+par(mfrow = c(2, 2))
+plot(model_lm)
+
+#Model validation
+library(car)
+ncvTest(model_lm)
+
+shapiro.test(model_lm$residuals)
+
+#Predictions 
+pred_lm <- predict(model_lm, data.frame(Cases=50000,Deaths=1000))
+pred_lm
+
+resuults <- cbind("predicted"=pred_lm,"actual"=corona$Deaths_perc)
+resuults
+
+
+library(jtools)
+library(auditor)
+lm_audit <- audit(model_lm, data = corona, y = corona$Deaths_perc)
+lm_audit
+# validate a model with auditor
+mr_lm <- model_residual(lm_audit)
+# plot results
+plot_prediction(mr_lm, abline = TRUE)
+
+
+
+
+
+
+
+
+
+
+```
